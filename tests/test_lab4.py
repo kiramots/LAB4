@@ -1,99 +1,116 @@
-import unittest
 import sys
-import os
+import unittest
+from pathlib import Path
 
-# Додаємо шлях до папки src, щоб можна було імпортувати lab4
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from lab4 import (
-    find_substring,
-    replace_substring,
-    split_text,
-    format_string_f,
-    format_string_method,
-    extract_emails,
-    validate_phone_number,
-    extract_hashtags,
-    extract_mentions,
-    count_words,
-    count_sentences,
-    word_frequency,
-    # Додайте сюди інші функції, які хочете протестувати
-)
+import lab4
 
-class TestTextAnalyzer(unittest.TestCase):
+class TestStrings(unittest.TestCase):
+    def test_find_replace_split(self):
+        self.assertEqual(lab4.find_substring("NeoTerra 3000", "Terra"), 3)
+        self.assertEqual(lab4.find_substring("abc", "z"), -1)
+        self.assertEqual(lab4.replace_substring("a-b-c", "-", "+"), "a+b+c")
+        self.assertEqual(lab4.split_text("a b  c"), ["a", "b", "c"])
 
-    def test_find_substring(self):
-        """Тест для функції find_substring."""
-        # TODO: Напишіть свій тест
-        # self.assertEqual(find_substring("Hello, world!", "world"), 7)
-        pass
+    def test_errors(self):
+        with self.assertRaises(ValueError):
+            lab4.replace_substring("abc", "", "x")
+        with self.assertRaises(TypeError):
+            lab4.find_substring(123, "1")
+        with self.assertRaises(TypeError):
+            lab4.extract_measurements(None)
 
-    def test_replace_substring(self):
-        """Тест для функції replace_substring."""
-        # TODO: Напишіть свій тест
-        # self.assertEqual(replace_substring("Hello, world!", "world", "Python"), "Hello, Python!")
-        pass
-
-    def test_split_text(self):
-        """Тест для функції split_text."""
-        # TODO: Напишіть свій тест
-        # self.assertEqual(split_text("Hello, world!", ", "), ["Hello", "world!"])
-        pass
-
-    def test_format_string_f(self):
-        """Тест для функції format_string_f."""
-        # TODO: Напишіть свій тест
-        # self.assertEqual(format_string_f("Alice", 30), "Мене звати Alice і мені 30 років.")
-        pass
-
-    def test_format_string_method(self):
-        """Тест для функції format_string_method."""
-        # TODO: Напишіть свій тест
-        # self.assertEqual(format_string_method("Bob", 25), "Мене звати Bob і мені 25 років.")
-        pass
-
-    def test_extract_emails(self):
-        """Тест для функції extract_emails."""
-        text = "Contact us at info@example.com or support@test.com"
-        expected = ["info@example.com", "support@test.com"]
-        # TODO: Напишіть свій тест
-        # self.assertEqual(extract_emails(text), expected)
-        pass
-
-    def test_validate_phone_number(self):
-        """Тест для функції validate_phone_number."""
-        # TODO: Напишіть свої тести для валідних і невалідних номерів
-        # self.assertTrue(validate_phone_number("+380123456789"))
-        # self.assertFalse(validate_phone_number("12345"))
-        pass
-
-    def test_extract_hashtags(self):
-        """Тест для функції extract_hashtags."""
-        text = "I love #Python and #Programming"
-        expected = ["#Python", "#Programming"]
-        # TODO: Напишіть свій тест
-        # self.assertEqual(extract_hashtags(text), expected)
-        pass
-
-    def test_extract_mentions(self):
-        """Тест для функції extract_mentions."""
-        # TODO: Напишіть свій тест
-        pass
-
-    def test_count_words(self):
-        """Тест для функції count_words."""
-        # TODO: Напишіть свій тест
-        pass
-
-    def test_count_sentences(self):
-        """Тест для функції count_sentences."""
-        # TODO: Напишіть свій тест
-        pass
-
-    # === Додайте власні тести для інших функцій та варіантів ===
+    def test_formatting_both_ways_equal(self):
+        self.assertEqual(lab4.format_fstring("v", 800, "км/год"), "v: 800 км/год")
+        self.assertEqual(lab4.format_fstring("v", 0.01, "%"),
+                         lab4.format_method("v", 0.01, "%"))
 
 
-if __name__ == '__main__':
-    # Запуск тестів
-    unittest.main(verbosity=2)
+class TestValidation(unittest.TestCase):
+    def test_emails(self):
+        for ok in ["info@neoterra3000.earth", "a.b+c@mail.com"]:
+            with self.subTest(email=ok):
+                self.assertTrue(lab4.validate_email(ok))
+        for bad in ["info@", "@mail.com", "a b@mail.com", "abc", "a@b"]:
+            with self.subTest(email=bad):
+                self.assertFalse(lab4.validate_email(bad))
+
+    def test_phones(self):
+        for ok in ["+3000-555-NEO-TERRA", "+380441234567", "+380 (44) 123 45 67"]:
+            with self.subTest(phone=ok):
+                self.assertTrue(lab4.validate_phone(ok))
+        for bad in ["123", "phone", "+38-", ""]:
+            with self.subTest(phone=bad):
+                self.assertFalse(lab4.validate_phone(bad))
+
+    def test_find_all_bad_regex(self):
+        with self.assertRaises(ValueError):
+            lab4.find_all("(unclosed", "text")
+
+
+class TestTextAnalysis(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.text = lab4.load_text()
+
+    def test_missing_file(self):
+        with self.assertRaises(FileNotFoundError):
+            lab4.load_text("no_such_file.txt")
+
+    def test_counts(self):
+        self.assertEqual(lab4.count_words("Привіт, світе! Це комп'ютер."), 4)
+        self.assertEqual(lab4.count_sentences("Раз. Два! Три? Без крапки"), 3)
+        self.assertEqual(lab4.count_sentences("Рівень 0.01% і дата 15.07.3010. Кінець."), 2)
+
+    def test_word_frequency(self):
+        top = lab4.word_frequency(self.text, 3)
+        self.assertEqual(len(top), 3)
+        self.assertEqual(top[0][0], "neoterra")
+        with self.assertRaises(ValueError):
+            lab4.word_frequency(self.text, 0)
+
+    def test_stats_positive(self):
+        self.assertGreater(lab4.count_words(self.text), 100)
+        self.assertGreater(lab4.count_sentences(self.text), 10)
+
+
+class TestVariant5Regex(unittest.TestCase):
+    """Вилучення назв екокуполів."""
+
+    def test_in_text(self):
+        self.assertEqual(lab4.extract_ecodomes(lab4.load_text()), ["EC-Dome-7"])
+
+    def test_multiple_and_duplicates(self):
+        s = "EC-Dome-7, EC-Dome-12 та знову EC-Dome-7; але XEC-Dome-3 і EC-Dome- не підходять"
+        self.assertEqual(lab4.extract_ecodomes(s), ["EC-Dome-7", "EC-Dome-12"])
+
+    def test_none(self):
+        self.assertEqual(lab4.extract_ecodomes("Тут купола немає"), [])
+
+
+class TestVariant5Measurements(unittest.TestCase):
+    """Числа та одиниці вимірювання."""
+
+    def test_in_text(self):
+        pairs = [(m.value, m.unit) for m in lab4.extract_measurements(lab4.load_text())]
+        self.assertEqual(
+            pairs,
+            [(800, "км/год"), (50, "ТВт"), (0.01, "%"), (1000, "USD"), (99.9, "%")])
+
+    def test_scientific(self):
+        ms = lab4.extract_measurements(
+            "c = 299792458 м/с, T = 36,6 °C, m = 5.97e24 кг, t = -5 °C")
+        self.assertEqual(
+            [(m.value, m.unit) for m in ms],
+            [(299792458, "м/с"), (36.6, "°C"), (5.97e24, "кг"), (-5, "°C")])
+
+    def test_ignores_words_dates_codes(self):
+        self.assertEqual(lab4.extract_measurements("5 мільйонів, 15.07.3010, HY-400 та"), [])
+
+    def test_group_by_unit(self):
+        ms = lab4.extract_measurements("1 % і 2 %, 3 кг")
+        self.assertEqual(lab4.group_by_unit(ms), {"%": [1.0, 2.0], "кг": [3.0]})
+
+if __name__ == "__main__":
+    unittest.main()
