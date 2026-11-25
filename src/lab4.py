@@ -1,200 +1,201 @@
 import re
-from collections import Counter
+from collections import Counter, namedtuple
+from pathlib import Path
 
-# === Функції для базових операцій з рядками ===
+# Шлях до файлу з текстом.
+DATA_FILE = Path(__file__).parent / "data" / "neoterra_text.txt"
 
-def find_substring(text, substring):
-    """
-    Пошук підрядка в тексті.
-    Повертає індекс першого входження або -1, якщо підрядок не знайдено.
-    """
-    # TODO: Реалізуйте функцію
-    pass
+
+def _check_str(value, name="text"):
+    """Перевіряє, що аргумент є рядком."""
+    if not isinstance(value, str):
+        raise TypeError(
+            f"Параметр '{name}' має бути рядком, а не {type(value).__name__}"
+        )
+
+
+def find_substring(text, sub):
+    """Повертає індекс першого входження підрядка або -1, якщо його немає."""
+    _check_str(text)
+    _check_str(sub, "sub")
+    return text.find(sub)
+
 
 def replace_substring(text, old, new):
-    """
-    Заміна підрядка в тексті.
-    """
-    # TODO: Реалізуйте функцію
-    pass
+    """Замінює всі входження підрядка old на new."""
+    _check_str(text)
+    _check_str(old, "old")
+    _check_str(new, "new")
+    if not old:
+        raise ValueError("Підрядок для заміни не може бути порожнім")
+    return text.replace(old, new)
 
-def split_text(text, delimiter=' '):
-    """
-    Розділення тексту за роздільником.
-    """
-    # TODO: Реалізуйте функцію
-    pass
 
-def format_string_f(name, age):
-    """
-    Форматування рядка з використанням f-string.
-    Приклад: "Мене звати [name] і мені [age] років."
-    """
-    # TODO: Реалізуйте функцію
-    pass
+def split_text(text, sep=None):
+    """Розділяє рядок за роздільником."""
+    _check_str(text)
+    return text.split(sep)
 
-def format_string_method(name, age):
-    """
-    Форматування рядка з використанням методу .format().
-    Приклад: "Мене звати [name] і мені [age] років."
-    """
-    # TODO: Реалізуйте функцію
-    pass
 
-# === Функції для роботи з регулярними виразами ===
+def format_fstring(name, value, unit):
+    """Форматує вимір за допомогою f-string."""
+    return f"{name}: {value:g} {unit}"
 
-def extract_emails(text):
-    """
-    Витяг email адрес з тексту.
-    """
-    # TODO: Реалізуйте функцію
-    pass
+def format_method(name, value, unit):
+    """Те саме, але за допомогою str.format()."""
+    return "{}: {:g} {}".format(name, value, unit)
 
-def validate_phone_number(number):
-    """
-    Валідація українського телефонного номера.
-    Формат: +380xxxxxxxxx
-    """
-    # TODO: Реалізуйте функцію
-    pass
 
-def extract_hashtags(text):
-    """
-    Витяг хештегів з тексту.
-    """
-    # TODO: Реалізуйте функцію
-    pass
+EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$")
+PHONE_RE = re.compile(r"^(?:\+?\d{10,13}|\+\d{1,4}(?:-[0-9A-Za-z]+)+)$")
+URL_RE = re.compile(r"https?://[^\s]+")
+HASHTAG_RE = re.compile(r"#\w+")
 
-def extract_mentions(text):
-    """
-    Витяг згадувань користувачів з тексту (напр. @user).
-    """
-    # TODO: Реалізуйте функцію
-    pass
 
-# === Функції для аналізу тексту ===
-
-def count_words(text):
-    """
-    Підрахунок кількості слів у тексті.
-    """
-    # TODO: Реалізуйте функцію
-    pass
-
-def count_sentences(text):
-    """
-    Підрахунок кількості речень у тексті.
-    """
-    # TODO: Реалізуйте функцію
-    pass
-
-def word_frequency(text):
-    """
-    Підрахунок частоти слів у тексті.
-    Повертає об'єкт Counter.
-    """
-    # TODO: Реалізуйте функцію
-    pass
-
-def analyze_text(text):
-    """
-    Комплексний аналіз тексту.
-    Повертає словник з результатами аналізу.
-    """
-    # TODO: Реалізуйте цю функцію, викликаючи інші ваші функції.
-    # Приклад результату:
-    # {
-    #     'word_count': ...,
-    #     'sentence_count': ...,
-    #     'word_frequency': [...],
-    #     'emails': [...],
-    #     ...
-    # }
-    return {}
-
-def format_analysis_results(results):
-    """
-    Форматування результатів аналізу для зручного виведення.
-    """
-    # TODO: Реалізуйте функцію
-    output = "Результати аналізу тексту:\n"
-    # Додайте форматування для кожного елементу в `results`
-    return output
-
-# === Функція для вилучення даних за варіантом ===
-
-def extract_variant_data(text, variant_pattern):
-    """
-    Вилучає дані з тексту за допомогою патерну, специфічного для варіанту.
-    """
-    # TODO: Реалізуйте функцію
-    pass
-
-# === Головна частина програми ===
-
-def read_file_content(filepath):
-    """
-    Читає вміст файлу.
-    """
+def find_all(pattern, text):
+    """Пошук усіх збігів шаблону pattern у тексті."""
+    _check_str(pattern, "pattern")
+    _check_str(text)
     try:
-        with open(filepath, 'r', encoding='utf-8') as file:
+        return re.findall(pattern, text)
+    except re.error as err:
+        raise ValueError(f"Некоректний регулярний вираз: {err}") from err
+
+
+def validate_email(email):
+    """True, якщо рядок є коректною емейл адресою."""
+    _check_str(email, "email")
+    return EMAIL_RE.fullmatch(email.strip()) is not None
+
+
+def validate_phone(phone):
+    """True, якщо рядок є коректним телефонним номером."""
+    _check_str(phone, "phone")
+    cleaned = re.sub(r"[\s()]", "", phone)
+    return PHONE_RE.fullmatch(cleaned) is not None
+
+
+def load_text(path=DATA_FILE):
+    """Читає текстовий файл у кодуванні UTF-8 з обробкою типових помилок."""
+    try:
+        with open(path, encoding="utf-8") as file:
             return file.read()
     except FileNotFoundError:
-        print(f"Помилка: Файл не знайдено за шляхом {filepath}")
-        return None
+        raise FileNotFoundError(f"Файл не знайдено: {path}") from None
+    except UnicodeDecodeError:
+        raise ValueError(f"Файл {path} не є коректним UTF-8") from None
+
+
+def get_words(text):
+    """Список слів у нижньому регістрі. Цифри та коди не рахуються."""
+    _check_str(text)
+    pattern = r"[^\W\d_]+(?:['’-][^\W\d_]+)*"
+    return re.findall(pattern, text.lower())
+
+
+def count_words(text):
+    """Кількість слів у тексті."""
+    return len(get_words(text))
+
+
+def count_sentences(text):
+    """Кількість речень у тексті."""
+    _check_str(text)
+    return len(re.findall(r"[^.!?]*[.!?]+(?=\s|$)", text))
+
+
+def word_frequency(text, top=10):
+    """Повертає `top` найчастіших слів як список пар (слово, кількість)."""
+    if not isinstance(top, int) or top < 1:
+        raise ValueError("top має бути додатним цілим числом")
+    return Counter(get_words(text)).most_common(top)
+
+
+def print_report(text, top=10):
+    """Виводить результати аналізу тексту у зручному вигляді."""
+    print("=" * 40)
+    print(f"Кількість слів:    {count_words(text)}")
+    print(f"Кількість речень:  {count_sentences(text)}")
+    print(f"Топ-{top} слів:")
+    for word, count in word_frequency(text, top):
+        print(f"  {word:<15} {count}")
+    print("=" * 40)
+
+
+# Шаблон: "EC-Dome-" + одна або більше цифр.
+# \b на початку чи в кінці гарантує що ми не вирвемо шматочок з довшого слова.
+ECODOME_RE = re.compile(r"\bEC-Dome-\d+\b")
+
+
+def extract_ecodomes(text):
+    """Повертає список унікальних назв екокуполів у порядку появи в тексті."""
+    _check_str(text)
+    found = ECODOME_RE.findall(text)
+    # dict.fromkeys прибирає дублікати, зберігаючи порядок.
+    return list(dict.fromkeys(found))
+
+
+Measurement = namedtuple("Measurement", ["value", "unit", "raw"])
+
+UNITS = [
+    "км/год", "км/с", "м/с", "км", "см", "мм", "м",
+    "ТВт", "ГВт", "МВт", "кВт", "Вт",
+    "кг", "мг", "г", "т",
+    "ПБ", "ТБ", "ГБ", "МБ",
+    "°C", "К", "Па", "Гц", "Дж",
+    "хв", "год", "с",
+    "USD", "%",
+]
+_UNITS_PATTERN = "|".join(re.escape(u) for u in UNITS)
+
+MEASURE_RE = re.compile(
+    rf"(?<!\w)(?P<value>[-+−]?\d+(?:[.,]\d+)?(?:[eE][-+]?\d+)?)"
+    rf"\s*(?P<unit>{_UNITS_PATTERN})(?!\w)"
+)
+
+
+def extract_measurements(text):
+    """Витягує з тексту пари. Повертає список Measurement(value: float, unit: str, raw: str)."""
+    _check_str(text)
+    result = []
+    for match in MEASURE_RE.finditer(text):
+        number = match.group("value").replace(",", ".").replace("−", "-")
+        result.append(Measurement(float(number), match.group("unit"), match.group(0)))
+    return result
+
+
+def group_by_unit(measurements):
+    """Групує значення за одиницею."""
+    grouped = {}
+    for m in measurements:
+        grouped.setdefault(m.unit, []).append(m.value)
+    return grouped
+
 
 def main():
-    """
-    Головна функція, що керує виконанням програми.
-    """
-    print("Ласкаво просимо до аналізатора тексту!")
+    try:
+        text = load_text()
+    except (FileNotFoundError, ValueError) as err:
+        print(f"Помилка: {err}")
+        return
 
-    # Шлях до файлу з текстом
-    text_filepath = 'src/data/neoterra_text.txt'
+    print_report(text)
 
-    # Читання тексту з файлу
-    text_to_analyze = read_file_content(text_filepath)
-    if not text_to_analyze:
-        return # Завершити, якщо файл не прочитано
+    print("\nЕкокупола:")
+    for dome in extract_ecodomes(text):
+        print(" ", dome)
 
-    while True:
-        try:
-            print("\nОберіть опцію:")
-            print("1. Аналіз тексту 'NeoTerra 3000'")
-            print("2. Валідація телефонного номера")
-            print("3. Вилучення даних за варіантом")
-            print("4. Вихід")
-            choice = input("Ваш вибір: ")
+    print("\nЧислові значення з одиницями:")
+    for m in extract_measurements(text):
+        print(f"  {m.raw!r:<14} -> {format_fstring('значення', m.value, m.unit)}")
 
-            if choice == '1':
-                results = analyze_text(text_to_analyze)
-                print(format_analysis_results(results))
+    sample = ("Швидкість світла 299792458 м/с, температура 36,6 °C, "
+              "маса Землі 5.97e24 кг, вологість 45%.")
+    print("\nНауковий приклад:")
+    for m in extract_measurements(sample):
+        print("  ", format_method("значення", m.value, m.unit))
+    print("   Групування:", group_by_unit(extract_measurements(sample)))
 
-            elif choice == '2':
-                phone = input("Введіть номер телефону для валідації: ")
-                if validate_phone_number(phone):
-                    print("Номер телефону валідний.")
-                else:
-                    print("Номер телефону невалідний.")
 
-            elif choice == '3':
-                variant = input("Введіть номер вашого варіанту (1-30): ")
-                # TODO: Визначте патерн для вашого варіанту
-                # Наприклад, для варіанту 1 (квантові комп'ютери):
-                # pattern = r'\b[A-Z]{2}-\d{4}\b'
-                # variant_data = extract_variant_data(text_to_analyze, pattern)
-                # print(f"Знайдені дані: {variant_data}")
-                print("Цю частину необхідно реалізувати самостійно згідно вашого варіанту.")
-
-            elif choice == '4':
-                print("Дякуємо за використання аналізатора!")
-                break
-
-            else:
-                print("Невірний вибір. Спробуйте ще раз.")
-
-        except Exception as e:
-            print(f"Виникла помилка: {e}")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
